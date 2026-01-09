@@ -11,51 +11,61 @@ import app.morphe.util.returnEarly
 import com.android.tools.smali.dexlib2.iface.instruction.OneRegisterInstruction
 import com.android.tools.smali.dexlib2.iface.reference.StringReference
 
-val spoofClientPatch = spoofClientPatch(redirectUri = "redditisfun://auth") { clientIdOption ->
+val spoofClientPatch = spoofClientPatch { clientIdOption, redirectUriOption, userAgentOption ->
     compatibleWith(
-        "com.andrewshu.android.reddit",
-        "com.andrewshu.android.redditdonation",
+        "com.andrewshu.android.reddit"("5.6.22")
     )
 
     val clientId by clientIdOption
+    val redirectUri by redirectUriOption
+    val userAgent by userAgentOption
 
     execute {
         // region Patch client id.
+        if (clientId != null) {
+            /**
+             * Replaces a one register instruction with a const-string instruction
+             * at the index returned by [getReplacementIndex].
+             *
+             * @param string The string to replace the instruction with.
+             * @param getReplacementIndex A function that returns the index of the instruction to replace
+             * using the [Match.StringMatch] list from the [Match].
+             */
+            fun Fingerprint.replaceWith(
+                string: String,
+                getReplacementIndex: List<Match.StringMatch>.() -> Int,
+            ) = method.apply {
+                val replacementIndex = stringMatches.getReplacementIndex()
+                val clientIdRegister = getInstruction<OneRegisterInstruction>(replacementIndex).registerA
 
-        /**
-         * Replaces a one register instruction with a const-string instruction
-         * at the index returned by [getReplacementIndex].
-         *
-         * @param string The string to replace the instruction with.
-         * @param getReplacementIndex A function that returns the index of the instruction to replace
-         * using the [Match.StringMatch] list from the [Match].
-         */
-        fun Fingerprint.replaceWith(
-            string: String,
-            getReplacementIndex: List<Match.StringMatch>.() -> Int,
-        ) = method.apply {
-            val replacementIndex = stringMatches!!.getReplacementIndex()
-            val clientIdRegister = getInstruction<OneRegisterInstruction>(replacementIndex).registerA
+                replaceInstruction(replacementIndex, "const-string v$clientIdRegister, \"$string\"")
+            }
 
-            replaceInstruction(replacementIndex, "const-string v$clientIdRegister, \"$string\"")
+            // Patch OAuth authorization.
+            buildAuthorizationStringFingerprint.replaceWith(clientId!!) { first().index + 4 }
+
+            // Path basic authorization.
+            basicAuthorizationFingerprint.replaceWith("$clientId:") { last().index + 7 }
         }
+        // endregion
 
-        // Patch OAuth authorization.
-        buildAuthorizationStringFingerprint.replaceWith(clientId!!) { first().index + 4 }
-
-        // Path basic authorization.
-        basicAuthorizationFingerprint.replaceWith("$clientId:") { last().index + 7 }
-
+        // region Patch redirect URI.
+        if (redirectUri != null) {
+            listOf(oAuth2ActivityD0Fingerprint, oAuth2ActivityShouldOverrideUrlLoadingFingerprint, cActivityJFingerprint).forEach { fingerprint ->
+                fingerprint.method.let {
+                    fingerprint.stringMatches.forEach { match ->
+                        val register = it.getInstruction<OneRegisterInstruction>(match.index).registerA
+                        it.replaceInstruction(match.index, "const-string v$register, \"$redirectUriOption\"")
+                    }
+                }
+            }
+        }
         // endregion
 
         // region Patch user agent.
-
-        // Use a random user agent.
-        val randomName = (0..100000).random()
-        val userAgent = "$randomName:app.morphe.$randomName:v1.0.0 (by /u/revanced)"
-
-        getUserAgentFingerprint.method.returnEarly(userAgent)
-
+        if (userAgent != null) {
+            getUserAgentFingerprint.method.returnEarly(userAgent!!)
+        }
         // endregion
 
         // region Patch miscellaneous.
@@ -73,7 +83,6 @@ val spoofClientPatch = spoofClientPatch(redirectUri = "redditisfun://auth") { cl
                 "const-string v$targetRegister, \"https://www.reddit.com/api/v1/authorize.compact\"",
             )
         }
-
         // endregion
     }
 }

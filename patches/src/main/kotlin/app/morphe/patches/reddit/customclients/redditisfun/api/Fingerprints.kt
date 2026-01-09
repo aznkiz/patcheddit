@@ -31,3 +31,32 @@ internal val getUserAgentFingerprint = Fingerprint(
         Opcode.CONST,
     )
 )
+
+// TODO: These obfuscated names are bad, but the app is abandoned so these will not be changing.
+// This can be fixed later once patcher API is capable of matching multiple methods with one fingerprint.
+internal val oAuth2ActivityD0Fingerprint = Fingerprint(
+    strings = listOf("redditisfun://auth"),
+    custom = { method, classDef ->
+        if (!classDef.endsWith("OAuth2Activity${'$'}b;")) return@Fingerprint false
+
+        method.name == "d0"
+    }
+)
+
+internal val oAuth2ActivityShouldOverrideUrlLoadingFingerprint = Fingerprint(
+    strings = listOf("redditisfun://auth"),
+    custom = { method, classDef ->
+        if (!classDef.endsWith("OAuth2Activity${'$'}a;")) return@Fingerprint false
+
+        method.name == "shouldOverrideUrlLoading"
+    }
+)
+
+internal val cActivityJFingerprint = Fingerprint(
+    strings = listOf("redditisfun://auth"),
+    custom = { method, classDef ->
+        if (!classDef.endsWith("c;")) return@Fingerprint false
+
+        method.name == "j"
+    }
+)

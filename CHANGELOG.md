@@ -1,3 +1,12 @@
+# [1.1.0-dev.1](https://github.com/wchill/patcheddit/compare/v1.0.1...v1.1.0-dev.1) (2026-01-09)
+
+
+### Features
+
+* Add imgur album patch for rif (from null-dev/revanced-patches@1dabe26) ([d7cc5a1](https://github.com/wchill/patcheddit/commit/d7cc5a1a653991c759d53171b09a6b6a69c08518))
+* Add rif premium unlock patch (from null-dev/revanced-patches@1dabe26) ([aff0385](https://github.com/wchill/patcheddit/commit/aff0385b158f883b2bbd445a16b1d9c5b5175b2d))
+* Add support for patching rif with custom redirect URI (from altherat/revanced-patches@fe01d43) ([e2aa03a](https://github.com/wchill/patcheddit/commit/e2aa03ae1bee92a499166647e9d19e5492904a8d))
+
 # 1.0.0 (2026-01-08)
 
 
